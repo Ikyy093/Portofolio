@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Kelola Project</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f7fb;
+}
+
+.container{
+width:90%;
+max-width:1000px;
+margin:40px auto;
+}
+
+.card{
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+h1{
+margin-bottom:25px;
+}
+
+input,
+textarea{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:8px;
+}
+
+textarea{
+resize:vertical;
+height:120px;
+}
+
+.actions{
+display:flex;
+justify-content:space-between;
+margin-top:20px;
+padding-top:20px;
+border-top:1px solid #eee;
+}
+
+.btn-back,
+.btn-save{
+padding:12px 24px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+text-decoration:none;
+font-weight:bold;
+}
+
+.btn-back{
+background:#6b7280;
+color:white;
+}
+
+.btn-save{
+background:#2563eb;
+color:white;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:30px;
+}
+
+table th,
+table td{
+padding:12px;
+border:1px solid #ddd;
+text-align:left;
+}
+
+table th{
+background:#2563eb;
+color:white;
+}
+
+#message{
+display:none;
+margin-top:15px;
+padding:12px;
+background:#dcfce7;
+color:#166534;
+border-radius:8px;
+font-weight:bold;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>Kelola Project</h1>
+
+<form id="projectForm">
+
+<input
+type="hidden"
+id="project_id">
+
+<input
+type="hidden"
+id="gambar_lama">
+
+<input
+type="text"
+id="judul"
+placeholder="Judul Project">
+
+<textarea
+id="deskripsi"
+placeholder="Deskripsi"></textarea>
+
+<input
+type="file"
+id="gambar"
+accept="image/*">
+
+<input
+type="text"
+id="link_project"
+placeholder="Link Project">
+
+<div class="actions">
+
+<a
+href="/admin/dashboard.html"
+class="btn-back">
+
+ Kembali
+
+</a>
+
+<button
+type="submit"
+class="btn-save">
+
+Simpan
+
+</button>
+
+</div>
+
+</form>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Judul</th>
+
+<th>Gambar</th>
+
+<th>Link</th>
+
+<th>Aksi</th>
+
+</tr>
+
+</thead>
+
+<tbody id="projectTable">
+
+</tbody>
+
+</table>
+
+<p id="message"></p>
+
+</div>
+
+</div>
+
+<script>
+
+const token = localStorage.getItem("token");
+
+async function loadProjects(){
+
+    try{
+
+        const response = await fetch("/api/projects");
+
+        const result = await response.json();
+
+        const table = document.getElementById("projectTable");
+
+        table.innerHTML = "";
+
+        result.data.forEach(project=>{
+
+            table.innerHTML += `
+
+            <tr>
+
+                <td>${project.judul}</td>
+
+                 <td>
+             ${
+            project.gambar_url
+            ? `<img src="${project.gambar_url}" width="90" style="border-radius:8px;">`
+            : "-"
+             }
+                </td>
+
+
+                <td>
+
+                    ${
+                        project.link_project
+                        ? `<a href="${project.link_project}" target="_blank">Lihat</a>`
+                        : "-"
+                    }
+
+                </td>
+
+                <td>
+
+                    <button onclick="editProject(
+                        ${project.id},
+                        \`${project.judul}\`,
+                        \`${project.deskripsi || ""}\`,
+                        \`${project.gambar_url || ""}\`,
+                        \`${project.link_project || ""}\`
+                    )">
+
+                    Edit
+
+                    </button>
+
+                    <button onclick="deleteProject(${project.id})">
+
+                    Hapus
+
+                    </button>
+
+                </td>
+
+            </tr>
+
+            `;
+
+        });
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+    }
+
+}
+
+loadProjects();
+
+document.getElementById("projectForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const id = document.getElementById("project_id").value;
+
+    let gambar_url = "";
+
+const file = document.getElementById("gambar").files[0];
+
+if(file){
+
+    const formData = new FormData();
+
+    formData.append("file", file);
+
+    const upload = await fetch("/api/upload/image",{
+
+        method:"POST",
+
+        headers:{
+            "Authorization":"Bearer " + token
+        },
+
+        body:formData
+
+    });
+
+    
+
+    const uploadResult = await upload.json();
+
+    if(uploadResult.success){
+
+        gambar_url = uploadResult.url;
+
+    }else{
+
+        alert(uploadResult.error);
+
+        return;
+
+    }
+
+}
+
+if(!gambar_url && id){
+
+    gambar_url = document.getElementById("gambar_lama").value;
+
+}
+
+    const data = {
+
+    judul: document.getElementById("judul").value,
+
+    deskripsi: document.getElementById("deskripsi").value,
+
+    gambar_url: gambar_url,
+
+    link_project: document.getElementById("link_project").value
+
+    };
+
+    let url = "/api/projects";
+
+    let method = "POST";
+
+    if(id){
+
+        url = "/api/projects/" + id;
+
+        method = "PUT";
+
+    }
+
+    const response = await fetch(url,{
+
+        method: method,
+
+        headers:{
+
+            "Content-Type":"application/json",
+
+            "Authorization":"Bearer " + token
+
+        },
+
+        body: JSON.stringify(data)
+
+    });
+
+    const result = await response.json();
+
+    const msg = document.getElementById("message");
+
+    msg.innerHTML = result.message || result.error;
+
+    msg.style.display = "block";
+
+    setTimeout(()=>{
+
+        msg.style.display = "none";
+
+    },2500);
+
+    document.getElementById("projectForm").reset();
+
+    document.getElementById("project_id").value = "";
+
+    loadProjects();
+
+});
+
+function editProject(id, judul, deskripsi, gambar_url, link_project){
+
+    document.getElementById("project_id").value = id;
+
+    document.getElementById("judul").value = judul;
+
+    document.getElementById("deskripsi").value = deskripsi;
+
+    document.getElementById("gambar_lama").value = gambar_url;
+
+    document.getElementById("link_project").value = link_project;
+
+}
+
+async function deleteProject(id){
+
+    if(!confirm("Yakin ingin menghapus project ini?")) return;
+
+    const response = await fetch("/api/projects/" + id,{
+
+        method:"DELETE",
+
+        headers:{
+
+            "Authorization":"Bearer " + token
+
+        }
+
+    });
+
+    const result = await response.json();
+
+    const msg = document.getElementById("message");
+
+    msg.innerHTML = result.message || result.error;
+
+    msg.style.display = "block";
+
+    setTimeout(()=>{
+
+        msg.style.display = "none";
+
+    },2500);
+
+    loadProjects();
+
+}
+
+</script>
+
+</body>
+
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Kelola Profile</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f7fb;
+}
+
+.container{
+width:90%;
+max-width:800px;
+margin:40px auto;
+}
+
+.card{
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+h1{
+margin-bottom:25px;
+}
+
+label{
+display:block;
+margin-top:15px;
+margin-bottom:5px;
+font-weight:bold;
+}
+
+input{
+width:100%;
+padding:12px;
+border:1px solid #ddd;
+border-radius:8px;
+}
+
+button{
+margin-top:25px;
+padding:12px 25px;
+background:#2563eb;
+border:none;
+border-radius:8px;
+color:white;
+cursor:pointer;
+}
+
+button:hover{
+background:#1d4ed8;
+}
+
+#message{
+margin-top:15px;
+font-weight:bold;
+}
+.actions{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-top:30px;
+    border-top:1px solid #e5e7eb;
+    padding-top:25px;
+}
+
+.btn-back{
+    display:inline-block;
+    padding:12px 24px;
+    background:#6b7280;
+    color:white;
+    text-decoration:none;
+    border-radius:8px;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+.btn-back:hover{
+    background:#4b5563;
+}
+
+.btn-save{
+    padding:12px 24px;
+    background:#2563eb;
+    color:white;
+    border:none;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    transition:0.2s;
+}
+
+.btn-save:hover{
+    background:#1d4ed8;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+
+<h1>Kelola Profil</h1>
+
+<form id="profileForm">
+
+<label>Nama Lengkap</label>
+<input type="text" id="nama_lengkap">
+
+<label>Nama Panggilan</label>
+<input type="text" id="nama_panggilan">
+
+<label>Email</label>
+<input type="email" id="email">
+
+<label>Telepon</label>
+<input type="text" id="telepon">
+
+<label>Universitas</label>
+<input type="text" id="universitas">
+
+<label>Fakultas</label>
+<input type="text" id="fakultas">
+
+<label>Program Studi</label>
+<input type="text" id="prodi">
+
+<label>Semester</label>
+<input type="number" id="semester">
+
+<div class="actions">
+
+<a href="/admin/dashboard.html" class="btn-back">
+ Kembali
+</a>
+
+<button type="submit" class="btn-save">
+ Simpan
+</button>
+
+</div>
+
+</form>
+
+<p id="message"></p>
+</div>
+
+</div>
+<script>
+
+const token = localStorage.getItem("token");
+
+async function loadProfile(){
+
+    try{
+
+        const response = await fetch("/api/profiles",{
+
+            headers:{
+                "Authorization":"Bearer "+token
+            }
+
+        });
+
+        const result = await response.json();
+
+        if(result.data){
+
+            document.getElementById("nama_lengkap").value = result.data.nama_lengkap || "";
+            document.getElementById("nama_panggilan").value = result.data.nama_panggilan || "";
+            document.getElementById("email").value = result.data.email || "";
+            document.getElementById("telepon").value = result.data.telepon || "";
+            document.getElementById("universitas").value = result.data.universitas || "";
+            document.getElementById("fakultas").value = result.data.fakultas || "";
+            document.getElementById("prodi").value = result.data.prodi || "";
+            document.getElementById("semester").value = result.data.semester || "";
+
+        }
+
+    }catch(err){
+
+        console.log(err);
+
+    }
+
+}
+
+loadProfile();
+
+document.getElementById("profileForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const token = localStorage.getItem("token");
+
+    const data = {
+        nama_lengkap: document.getElementById("nama_lengkap").value,
+        nama_panggilan: document.getElementById("nama_panggilan").value,
+        email: document.getElementById("email").value,
+        telepon: document.getElementById("telepon").value,
+        universitas: document.getElementById("universitas").value,
+        fakultas: document.getElementById("fakultas").value,
+        prodi: document.getElementById("prodi").value,
+        semester: document.getElementById("semester").value
+    };
+
+    try{
+
+        const response = await fetch("/api/profiles",{
+
+            method:"PUT",
+
+            headers:{
+                "Content-Type":"application/json",
+                "Authorization":"Bearer "+token
+            },
+
+            body:JSON.stringify(data)
+
+        });
+
+        const result = await response.json();
+
+        if(response.ok){
+
+            document.getElementById("message").innerHTML =
+            "<span style='color:green'>Profil berhasil disimpan.</span>";
+
+        }else{
+
+            document.getElementById("message").innerHTML =
+            "<span style='color:red'>"+result.error+"</span>";
+
+        }
+
+    }catch(err){
+
+        document.getElementById("message").innerHTML =
+        "<span style='color:red'>Gagal terhubung ke server.</span>";
+
+    }
+
+});
+
+</script>
+</body>
+</html>

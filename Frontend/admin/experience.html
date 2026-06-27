@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>Kelola Experience</title>
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#f4f7fb;
+}
+
+.container{
+width:90%;
+max-width:900px;
+margin:40px auto;
+}
+
+.card{
+background:white;
+padding:30px;
+border-radius:12px;
+box-shadow:0 4px 10px rgba(0,0,0,.08);
+}
+
+h1{
+margin-bottom:25px;
+}
+
+input{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:8px;
+}
+
+textarea{
+width:100%;
+padding:12px;
+margin-bottom:15px;
+border:1px solid #ddd;
+border-radius:8px;
+resize:vertical;
+}
+
+.actions{
+display:flex;
+justify-content:space-between;
+margin-top:20px;
+padding-top:20px;
+border-top:1px solid #eee;
+}
+
+.btn-back,
+.btn-save{
+padding:12px 24px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+text-decoration:none;
+font-weight:bold;
+}
+
+.btn-back{
+background:#6b7280;
+color:white;
+}
+
+.btn-save{
+background:#2563eb;
+color:white;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:30px;
+}
+
+table th,
+table td{
+padding:12px;
+border:1px solid #ddd;
+text-align:left;
+}
+
+table th{
+background:#2563eb;
+color:white;
+}
+
+#message{
+margin-top:20px;
+padding:12px;
+border-radius:8px;
+background:#dcfce7;
+color:#166534;
+font-weight:bold;
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<div class="card">
+
+<h1>Kelola Experience</h1>
+<form id="experienceForm">
+
+<input
+type="hidden"
+id="experience_id">
+
+<input
+type="text"
+id="posisi"
+placeholder="Posisi">
+
+<input
+type="text"
+id="perusahaan"
+placeholder="Perusahaan">
+
+<input
+type="text"
+id="durasi"
+placeholder="Durasi">
+
+<textarea
+id="deskripsi"
+placeholder="Deskripsi"
+rows="4"></textarea>
+
+<div class="actions">
+
+<a href="/admin/dashboard.html" class="btn-back">
+ Kembali
+</a>
+
+<button
+type="submit"
+class="btn-save">
+Simpan
+</button>
+
+</div>
+
+</form>
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>Posisi</th>
+
+<th>Perusahaan</th>
+
+<th>Durasi</th>
+
+<th>Aksi</th>
+
+</tr>
+
+</thead>
+
+<tbody id="experienceTable">
+
+</tbody>
+
+</table>
+
+<p id="message"></p>
+
+</div>
+
+</div>
+
+<script>
+
+const token = localStorage.getItem("token");
+
+async function loadExperiences(){
+
+    const response = await fetch("/api/experiences");
+
+    const result = await response.json();
+
+    const table = document.getElementById("experienceTable");
+
+    table.innerHTML = "";
+
+    result.data.forEach(exp=>{
+
+        table.innerHTML += `
+        <tr>
+
+            <td>${exp.posisi}</td>
+
+            <td>${exp.perusahaan}</td>
+
+            <td>${exp.durasi}</td>
+
+            <td>
+
+                <button onclick="editExperience(
+                    ${exp.id},
+                    '${exp.posisi}',
+                    '${exp.perusahaan}',
+                    '${exp.durasi}',
+                    \`${exp.deskripsi || ""}\`
+                )">
+                    Edit
+                </button>
+
+                <button onclick="deleteExperience(${exp.id})">
+                    Hapus
+                </button>
+
+            </td>
+
+        </tr>
+        `;
+
+    });
+
+}
+
+loadExperiences();
+
+
+document.getElementById("experienceForm").addEventListener("submit", async function(e){
+
+    e.preventDefault();
+
+    const id = document.getElementById("experience_id").value;
+
+    const data = {
+
+        posisi: document.getElementById("posisi").value,
+
+        perusahaan: document.getElementById("perusahaan").value,
+
+        durasi: document.getElementById("durasi").value,
+
+        deskripsi: document.getElementById("deskripsi").value
+
+    };
+
+    let url = "/api/experiences";
+
+    let method = "POST";
+
+    if(id){
+
+        url = "/api/experiences/" + id;
+
+        method = "PUT";
+
+    }
+
+    const response = await fetch(url,{
+
+        method:method,
+
+        headers:{
+
+            "Content-Type":"application/json",
+
+            "Authorization":"Bearer " + token
+
+        },
+
+        body:JSON.stringify(data)
+
+    });
+
+    const result = await response.json();
+
+    const msg = document.getElementById("message");
+
+    msg.innerHTML = result.message || result.error;
+
+    msg.style.display = "block";
+
+    setTimeout(()=>{
+
+        msg.style.display = "none";
+
+    },2500);
+
+    document.getElementById("experienceForm").reset();
+
+    document.getElementById("experience_id").value = "";
+
+    loadExperiences();
+
+});
+
+
+function editExperience(id,posisi,perusahaan,durasi,deskripsi){
+
+    document.getElementById("experience_id").value = id;
+
+    document.getElementById("posisi").value = posisi;
+
+    document.getElementById("perusahaan").value = perusahaan;
+
+    document.getElementById("durasi").value = durasi;
+
+    document.getElementById("deskripsi").value = deskripsi;
+
+}
+
+
+async function deleteExperience(id){
+
+    if(!confirm("Yakin ingin menghapus experience ini?")) return;
+
+    const response = await fetch("/api/experiences/" + id,{
+
+        method:"DELETE",
+
+        headers:{
+
+            "Authorization":"Bearer " + token
+
+        }
+
+    });
+
+    const result = await response.json();
+
+    const msg = document.getElementById("message");
+
+    msg.innerHTML = result.message || result.error;
+
+    msg.style.display = "block";
+
+    setTimeout(()=>{
+
+        msg.style.display = "none";
+
+    },2500);
+
+    loadExperiences();
+
+}
+
+</script>
+
+</body>
+</html>

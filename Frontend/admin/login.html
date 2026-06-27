@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Login</title>
+
+    <style>
+        *{
+            margin:0;
+            padding:0;
+            box-sizing:border-box;
+            font-family:Arial,sans-serif;
+        }
+
+        body{
+            height:100vh;
+            display:flex;
+            justify-content:center;
+            align-items:center;
+            background:#f5f7fb;
+        }
+
+        .login-box{
+            width:380px;
+            background:#fff;
+            padding:35px;
+            border-radius:12px;
+            box-shadow:0 10px 25px rgba(0,0,0,.1);
+        }
+
+        h2{
+            text-align:center;
+            margin-bottom:25px;
+            color:#222;
+        }
+
+        input{
+            width:100%;
+            padding:12px;
+            margin-top:12px;
+            border:1px solid #ddd;
+            border-radius:8px;
+            font-size:15px;
+        }
+
+        input:focus{
+            outline:none;
+            border-color:#2563eb;
+        }
+
+        button{
+            width:100%;
+            margin-top:20px;
+            padding:12px;
+            border:none;
+            border-radius:8px;
+            background:#2563eb;
+            color:white;
+            cursor:pointer;
+            font-size:16px;
+            transition:.2s;
+        }
+
+        button:hover{
+            background:#1d4ed8;
+        }
+
+        #message{
+            margin-top:15px;
+            text-align:center;
+            font-size:14px;
+            color:red;
+        }
+
+        .back-home{
+            display:block;
+            margin-top:15px;
+            text-align:center;
+            color:#2563eb;
+            text-decoration:none;
+            font-weight:600;
+        }
+
+        .back-home:hover{
+            text-decoration:underline;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <h2>Admin Login</h2>
+
+    <form id="loginForm">
+
+        <input
+            type="text"
+            id="username"
+            placeholder="Username"
+            required>
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Password"
+            required>
+
+        <button type="submit">
+            Masuk
+        </button>
+
+        <div style="margin-top:15px;text-align:center;">
+            <a href="/" class="back-home">← Kembali ke Portfolio</a>
+        </div>
+
+    </form>
+
+    <p id="message"></p>
+
+</div>
+
+<script>
+
+const form = document.getElementById("loginForm");
+const message = document.getElementById("message");
+
+form.addEventListener("submit", async (e) => {
+
+    e.preventDefault();
+
+    message.innerText = "";
+
+    const username = document.getElementById("username").value.trim();
+    const password = document.getElementById("password").value;
+
+    try{
+
+        const response = await fetch("/api/login",{
+
+            method:"POST",
+
+            headers:{
+                "Content-Type":"application/json"
+            },
+
+            body:JSON.stringify({
+                username:username,
+                password:password
+            })
+
+        });
+
+        const result = await response.json();
+
+        if(response.ok){
+
+            localStorage.setItem("token", result.token);
+
+            window.location.href="/admin/dashboard.html";
+
+        }else{
+
+            message.innerText=result.error || "Login gagal.";
+
+        }
+
+    }catch(err){
+
+        console.error(err);
+
+        message.innerText="Tidak dapat terhubung ke server.";
+
+    }
+
+});
+
+</script>
+
+</body>
+</html>
